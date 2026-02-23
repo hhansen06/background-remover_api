@@ -11,20 +11,20 @@ Lokaler Start
 1) Abhaengigkeiten installieren
    pip install -r requirements.txt
 2) Server starten
-   uvicorn src.main:app --host 0.0.0.0 --port 8000
+   uvicorn src.main:app --host 0.0.0.0 --port 8040
 
 Docker Start
 1) Image bauen und starten
    docker compose up --build
 
 Beispiel-Request
-curl -X POST "http://localhost:8000/remove-bg" \
+curl -X POST "http://localhost:8040/remove-bg" \
   -H "Content-Type: multipart/form-data" \
   -F "file=@/path/to/image.jpg" \
   --output output.png
 
 Vergleichs-Request (rembg vs opencv)
-curl -X POST "http://localhost:8000/remove-bg-compare" \
+curl -X POST "http://localhost:8040/remove-bg-compare" \
    -H "Content-Type: multipart/form-data" \
    -F "file=@/path/to/image.jpg" \
    --output outputs.zip
