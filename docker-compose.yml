@@ -1,0 +1,12 @@
+version: "3.9"
+
+services:
+  api:
+    build: .
+    ports:
+      - "8040:8000"
+    environment:
+      MAX_IMAGE_BYTES: 8388608
+      LOG_LEVEL: INFO
+      CORS_ORIGINS:
+      REQUEST_ID_HEADER: X-Request-ID
