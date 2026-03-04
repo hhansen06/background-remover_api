@@ -13,6 +13,11 @@ Lokaler Start
 2) Server starten
    uvicorn src.main:app --host 0.0.0.0 --port 8000
 
+Webinterface
+- Minimales UI unter http://localhost:8000/ui
+- Bild auswaehlen, "Hintergrund entfernen" klicken
+- Der Download der PNG-Datei startet direkt im Browser
+
 Docker Start
 1) Image bauen und starten
    docker compose up --build
@@ -44,6 +49,7 @@ Endpoints
 - GET /health
 - GET /ready
 - GET /version
+- GET /ui
 - POST /remove-bg
 - POST /remove-bg-compare
 

@@ -9,7 +9,7 @@ import cv2
 import numpy as np
 from fastapi import FastAPI, File, HTTPException, Query, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from rembg import remove as rembg_remove
 
 app = FastAPI(title="Background Remover API", version="0.1.0")
@@ -106,6 +106,7 @@ def root() -> dict:
             "health": "/health",
             "ready": "/ready",
             "version": "/version",
+            "ui": "/ui",
             "remove_bg": "/remove-bg",
             "remove_bg_compare": "/remove-bg-compare",
         },
@@ -118,6 +119,103 @@ def root() -> dict:
 @app.get("/version")
 def version() -> dict:
     return {"version": app.version}
+
+
+@app.get("/ui", response_class=HTMLResponse)
+def ui() -> str:
+        return """<!doctype html>
+<html lang="de">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Background Remover</title>
+    <style>
+        :root { color-scheme: light dark; }
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+            margin: 2rem auto;
+            max-width: 560px;
+            padding: 0 1rem;
+        }
+        form { display: grid; gap: .75rem; }
+        button { width: fit-content; padding: .5rem .9rem; cursor: pointer; }
+        #status { min-height: 1.2rem; }
+    </style>
+</head>
+<body>
+    <h1>Background Remover</h1>
+    <p>Bild hochladen und Ergebnis als PNG herunterladen.</p>
+
+    <form id="upload-form">
+        <input id="file" name="file" type="file" accept="image/png,image/jpeg,image/webp" required />
+        <button id="submit" type="submit">Hintergrund entfernen</button>
+    </form>
+    <p id="status"></p>
+
+    <script>
+        const form = document.getElementById('upload-form');
+        const statusEl = document.getElementById('status');
+        const submitBtn = document.getElementById('submit');
+        const fileInput = document.getElementById('file');
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (!fileInput.files || !fileInput.files.length) {
+                statusEl.textContent = 'Bitte zuerst eine Datei auswählen.';
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+
+            statusEl.textContent = 'Verarbeite Bild...';
+            submitBtn.disabled = true;
+
+            try {
+                const response = await fetch('/remove-bg', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    let detail = 'Unbekannter Fehler';
+                    try {
+                        const payload = await response.json();
+                        detail = payload.detail || detail;
+                    } catch (_) {
+                        detail = await response.text();
+                    }
+                    throw new Error(detail);
+                }
+
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+
+                const baseName = file.name.includes('.')
+                    ? file.name.slice(0, file.name.lastIndexOf('.'))
+                    : file.name;
+                const downloadName = `${baseName}-no-bg.png`;
+
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = downloadName;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+
+                URL.revokeObjectURL(url);
+                statusEl.textContent = 'Fertig. Download wurde gestartet.';
+            } catch (error) {
+                statusEl.textContent = `Fehler: ${error.message}`;
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
+"""
 
 
 def decode_image(data: bytes) -> np.ndarray | None:

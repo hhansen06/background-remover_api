@@ -36,6 +36,13 @@ def test_ready() -> None:
     assert response.json()["status"] == "ok"
 
 
+def test_ui() -> None:
+    response = client.get("/ui")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/html")
+    assert "<form id=\"upload-form\">" in response.text
+
+
 def test_remove_bg() -> None:
     data = make_png()
     files = {"file": ("test.png", data, "image/png")}
